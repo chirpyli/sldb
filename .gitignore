@@ -1,0 +1,29 @@
+# 编译产物
+*.o
+*.a
+*.so
+sldb
+
+# flex / bison 生成的中间文件
+src/parser/scan.c
+src/parser/gram.c
+src/parser/gram.h
+
+# IDE / clangd 编译数据库与缓存
+compile_commands.json
+.cache/
+.clangd/
+
+# 调试文件
+*.dSYM/
+core
+*.core
+
+# 编辑器 / 系统临时文件
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 项目数据目录（保留，勿删）
+!.codebuddy/
