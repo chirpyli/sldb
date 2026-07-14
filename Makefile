@@ -1,5 +1,5 @@
 CC       = gcc
-CFLAGS   = -Wall -Wextra -g
+CFLAGS   = -Wall -Wextra -g -D_GNU_SOURCE      # -D_GNU_SOURCE 启用 fmemopen/getline/strndup
 INCLUDES = -Isrc/include -Isrc/parser
 
 PARSER_DIR = src/parser
@@ -9,12 +9,18 @@ NODES_DIR   = src/nodes
 GEN_SRC  = $(PARSER_DIR)/scan.c $(PARSER_DIR)/gram.c
 GEN_HDR  = $(PARSER_DIR)/gram.h
 
+# 后续模块目录（Phase 0 占位；Phase 1-6 逐步填充实现）
+MODULE_DIRS = src/storage src/access src/executor src/catalog src/txn src/planner
+
+# 统一错误码模块（Phase 0 新增）+ 各模块占位 .c（通过 MODULE_DIRS 通配纳入）
 SRCS = src/main.c \
+       src/error.c \
        $(MEM_DIR)/arena.c \
        $(NODES_DIR)/node.c \
        $(NODES_DIR)/list.c \
        $(PARSER_DIR)/scansup.c \
-       $(GEN_SRC)
+       $(GEN_SRC) \
+       $(foreach d,$(MODULE_DIRS),$(wildcard $(d)/*.c))
 
 OBJS = $(SRCS:.c=.o)
 

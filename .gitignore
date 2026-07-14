@@ -27,3 +27,6 @@ core
 
 # 项目数据目录（保留，勿删）
 !.codebuddy/
+
+# 运行时数据库目录（data/<db>/，由 db_init 生成，不入库）
+data/
