@@ -59,7 +59,7 @@ void yyerror(const char *msg) {
 %type <node> SelectStmt InsertStmt UpdateStmt DeleteStmt CreateStmt DropStmt
 %type <node> target_el opt_where_clause opt_limit_clause sortby
 %type <node> set_clause column_def type_name c_expr b_expr a_expr
-%type <list> target_list from_clause from_list opt_sort_clause sort_clause
+%type <list> target_list from_clause from_list opt_from_clause opt_sort_clause sort_clause
 %type <list> insert_column_list column_ref_list value_list set_clause_list column_def_list
 %type <str>  opt_alias
 %type <sortdir> opt_asc_desc
@@ -131,17 +131,17 @@ stmt:
 
 SelectStmt:
     KW_SELECT target_list
-    KW_FROM from_clause
+    opt_from_clause
     opt_where_clause
     opt_sort_clause
     opt_limit_clause
     {
         SelectStmt *s = makeNode(SelectStmt);
         s->targetList  = $2;
-        s->fromClause  = $4;
-        s->whereClause = $5;
-        s->sortClause  = $6;
-        s->limitCount  = $7;
+        s->fromClause  = $3;
+        s->whereClause = $4;
+        s->sortClause  = $5;
+        s->limitCount  = $6;
         $$ = (Node *)s;
     }
     ;
@@ -178,6 +178,12 @@ opt_alias:
 
 from_clause:
     from_list      { $$ = $1; }
+    ;
+
+/* FROM 可选：支持纯常量 SELECT（如 SELECT 1+2*3;）——Phase 1 端到端验证需要 */
+opt_from_clause:
+    KW_FROM from_clause   { $$ = $2; }
+    | /* empty */         { $$ = NULL; }
     ;
 
 from_list:

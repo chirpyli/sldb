@@ -17,6 +17,7 @@
 #include "parser.h"
 #include "gram.h"
 #include "error.h"
+#include "types.h"       /* Phase 1：eval_expr / value_to_string / Value */
 #include "repl.h"
 
 /* flex 提供的输入文件指针（classic 模式全局） */
@@ -220,8 +221,30 @@ static void dispatch_stmt(RawStmt *rs)
     case T_DropStmt:
         /* TODO Phase 3：catalog_drop_table(...) 删除元数据 + 删堆文件 */
         printf("[DDL] "); print_node(stmt, 0); break;
+    case T_SelectStmt: {
+        SelectStmt *s = (SelectStmt *)stmt;
+        /* Phase 1：无 FROM 的纯常量 SELECT 直接求值并打印（端到端验证类型系统，
+         * 印证"类型系统可脱离系统表独立工作"——见设计文档 §8.4）。 */
+        if (s->fromClause == NULL || list_length(s->fromClause) == 0) {
+            printf("[EVAL] ");
+            for (int i = 0; i < list_length(s->targetList); i++) {
+                ResTarget *rt = (ResTarget *)list_nth(s->targetList, i);
+                if (rt->val == NULL) continue;
+                Value v = eval_expr(rt->val);
+                if (sldb_errcode != SLDB_OK) {    /* 除零 / 类型不匹配等 */
+                    fprintf(stderr, "Eval error: %s\n", sldb_errmsg_str());
+                    sldb_reset_error();
+                    break;
+                }
+                if (i) printf(" | ");
+                printf("%s", value_to_string(&v));
+            }
+            break;
+        }
+        print_node(stmt, 0);   /* 含 FROM 的查询留待后续 Phase 接入执行器 */
+        break;
+    }
     case T_InsertStmt:  /* TODO Phase 4：Executor Insert 节点 */
-    case T_SelectStmt:  /* TODO Phase 5：Analyzer + Planner + Executor */
     case T_UpdateStmt:  /* TODO Phase 4 */
     case T_DeleteStmt:  /* TODO Phase 4 */
     default:
